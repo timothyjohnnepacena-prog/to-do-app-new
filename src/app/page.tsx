@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import KanbanBoard from './components/KanbanBoard';
 import ActivityLog from './components/ActivityLog';
 
@@ -23,6 +24,7 @@ interface ActivityLogEntry {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLogEntry[]>([]);
 
@@ -61,6 +63,11 @@ export default function Home() {
     }
   };
 
+  const handleLogout = async () => {
+    await signOut({ redirect: false });
+    router.replace('/login');
+  };
+
   const handleTaskAdded = () => {
     fetchTasks();
     fetchActivityLogs();
@@ -77,7 +84,7 @@ export default function Home() {
         <h1 className="text-3xl font-bold">My Kanban Board</h1>
         <div className="flex items-center gap-4">
           <button 
-            onClick={() => signOut({ callbackUrl: '/login' })}
+            onClick={handleLogout}
             className="bg-white/20 hover:bg-white/30 px-3 py-1 rounded text-xs font-bold border border-white/50 transition"
           >
             LOG OUT
