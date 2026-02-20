@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import TaskCard from './TaskCard';
 
 interface Task {
@@ -19,6 +19,9 @@ interface ColumnProps {
 
 export default function Column({ status, tasks, onTaskUpdated, allTasks }: ColumnProps) {
   const [isDragOver, setIsDragOver] = useState(false);
+  const [dropIndicatorIndex, setDropIndicatorIndex] = useState<number | null>(null);
+  const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
+  const cardHeightRef = useRef<number>(0);
   
   const columnNames: Record<string, string> = {
     todo: 'To Do',
@@ -32,58 +35,117 @@ export default function Column({ status, tasks, onTaskUpdated, allTasks }: Colum
     done: 'bg-green-50 border-green-200',
   };
 
-  // Makes the column light up when we hover a task over it
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragOver(true);
+
+    // Find the element being dragged and get its task ID
+    const draggingElement = document.querySelector('[data-task-id].is-dragging');
+    if (draggingElement) {
+      const taskId = draggingElement.getAttribute('data-task-id');
+      if (taskId) {
+        setDraggingTaskId(taskId);
+      }
+    }
+
+    const container = e.currentTarget;
+    const y = e.clientY;
+    
+    // We strictly ignore the card being dragged so it doesn't "block" itself
+    const draggableElements = [...container.querySelectorAll('[data-task-id]:not(.is-dragging)')];
+    
+    let closestOffset = Number.NEGATIVE_INFINITY;
+    let newDropIndex = tasks.length; 
+
+    draggableElements.forEach((child) => {
+      const taskId = child.getAttribute('data-task-id');
+      const taskIndex = tasks.findIndex(t => t._id === taskId);
+      
+      if (taskIndex !== -1) {
+        const box = child.getBoundingClientRect();
+        const offset = y - (box.top + box.height / 2);
+        if (offset < 0 && offset > closestOffset) {
+          closestOffset = offset;
+          newDropIndex = taskIndex;
+        }
+      }
+    });
+
+    setDropIndicatorIndex(newDropIndex);
   };
 
-  const handleDragLeave = () => {
-    setIsDragOver(false);
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false);
+      setDropIndicatorIndex(null);
+      setDraggingTaskId(null);
+    }
   };
 
-  // What happens when we let go of the mouse (Drop!)
   const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragOver(false);
+    setDropIndicatorIndex(null);
+    setDraggingTaskId(null);
 
-    // Find out which task we just dropped
     const taskId = e.dataTransfer.getData('taskId');
     if (!taskId) return;
 
-    const task = allTasks.find((t) => t._id === taskId);
-    if (!task) return;
+    const taskToMove = allTasks.find((t) => t._id === taskId);
+    if (!taskToMove) return;
 
-    // If we dropped it in the same column it was already in, do nothing
-    if (task.status === status) return;
+    const container = e.currentTarget;
+    const y = e.clientY;
+    const draggableElements = [...container.querySelectorAll('[data-task-id]:not(.is-dragging)')];
+    
+    let insertBeforeTaskId: string | null = null;
+    let closestOffset = Number.NEGATIVE_INFINITY;
+
+    draggableElements.forEach(child => {
+      const box = child.getBoundingClientRect();
+      const offset = y - (box.top + box.height / 2);
+      if (offset < 0 && offset > closestOffset) {
+        closestOffset = offset;
+        insertBeforeTaskId = child.getAttribute('data-task-id');
+      }
+    });
+
+    // Remove from original list and insert at new position
+    let newColumnTasks = tasks.filter(t => t._id !== taskId);
+
+    if (insertBeforeTaskId) {
+      const insertIndex = newColumnTasks.findIndex(t => t._id === insertBeforeTaskId);
+      if (insertIndex !== -1) {
+        newColumnTasks.splice(insertIndex, 0, taskToMove);
+      } else {
+        newColumnTasks.push(taskToMove);
+      }
+    } else {
+      newColumnTasks.push(taskToMove); 
+    }
+
+    const updatedTasks = newColumnTasks.map((t, index) => ({
+      _id: t._id,
+      status: status, 
+      priority: index,
+    }));
 
     try {
-      // Tell our backend mailbox to move the task!
-      // (Our backend will automatically create the Activity Log for us)
-      const response = await fetch(`/api/tasks/${taskId}`, {
+      await fetch(`/api/tasks/reorder`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: task.title,
-          status: status, // The new status column it was dropped into
-          priority: task.priority,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tasks: updatedTasks, movedTaskId: taskId }),
       });
-
-      if (response.ok) {
-        onTaskUpdated(); // Refresh the board!
-      }
+      onTaskUpdated();
     } catch (error) {
-      console.error('Error updating task:', error);
+      console.error('Error reordering tasks:', error);
     }
   };
 
   return (
     <div
-      className={`rounded-lg border-2 p-3 transition-all flex flex-col h-full overflow-hidden ${columnColors[status]} ${
-        isDragOver ? 'scale-105 opacity-75 border-blue-500' : ''
+      className={`rounded-lg border-2 p-3 flex flex-col h-full overflow-hidden ${columnColors[status]} ${
+        isDragOver ? 'border-blue-400 bg-blue-50/40 shadow-inner' : ''
       }`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -91,18 +153,44 @@ export default function Column({ status, tasks, onTaskUpdated, allTasks }: Colum
     >
       <h2 className="text-lg font-bold mb-3 text-gray-800">
         {columnNames[status]}
+        <span className="ml-2 text-sm font-normal text-gray-500">({tasks.length})</span>
       </h2>
-      <div className="space-y-2 overflow-y-auto flex-1 min-h-0">
-        {tasks.map((task) => (
-          <TaskCard
-            key={task._id}
-            task={task}
-            status={status}
-            onTaskUpdated={onTaskUpdated}
-          />
+      
+      <div className="space-y-2 overflow-y-auto flex-1 min-h-0 relative">
+        {tasks.map((task, index) => (
+          <React.Fragment key={task._id}>
+            {dropIndicatorIndex === index && draggingTaskId && (
+              <div className="rounded p-3 text-xs border border-gray-200 border-l-4 border-l-blue-500 bg-blue-100/40 opacity-50 animate-pulse shadow-sm">
+                <h3 className="font-semibold text-gray-800 text-sm break-words mb-2">
+                  {allTasks.find(t => t._id === draggingTaskId)?.title || ''}
+                </h3>
+                <div className="flex gap-2 mt-2">
+                  <div className="flex-1 bg-blue-50 text-blue-600 border border-blue-200 px-1.5 py-1 rounded text-xs font-medium">Edit</div>
+                  <div className="flex-1 bg-red-50 text-red-600 border border-red-200 px-1.5 py-1 rounded text-xs font-medium">Delete</div>
+                </div>
+              </div>
+            )}
+            <div
+              ref={(el) => {
+                if (el && cardHeightRef.current === 0) {
+                  cardHeightRef.current = el.offsetHeight;
+                }
+              }}
+            >
+              <TaskCard task={task} status={status} onTaskUpdated={onTaskUpdated} />
+            </div>
+          </React.Fragment>
         ))}
-        {tasks.length === 0 && (
-          <p className="text-gray-400 text-center py-4 text-sm font-medium">No tasks yet</p>
+        {dropIndicatorIndex === tasks.length && draggingTaskId && (
+          <div className="rounded p-3 text-xs border border-gray-200 border-l-4 border-l-blue-500 bg-blue-100/40 opacity-50 animate-pulse shadow-sm">
+            <h3 className="font-semibold text-gray-800 text-sm break-words mb-2">
+              {allTasks.find(t => t._id === draggingTaskId)?.title || ''}
+            </h3>
+            <div className="flex gap-2 mt-2">
+              <div className="flex-1 bg-blue-50 text-blue-600 border border-blue-200 px-1.5 py-1 rounded text-xs font-medium">Edit</div>
+              <div className="flex-1 bg-red-50 text-red-600 border border-red-200 px-1.5 py-1 rounded text-xs font-medium">Delete</div>
+            </div>
+          </div>
         )}
       </div>
     </div>

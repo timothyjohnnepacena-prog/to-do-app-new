@@ -33,7 +33,8 @@ export default function Home() {
 
   const fetchTasks = async () => {
     try {
-      const response = await fetch('/api/tasks');
+      // Added { cache: 'no-store' } to stop the browser from hiding your new tasks
+      const response = await fetch('/api/tasks', { cache: 'no-store' });
       const data = await response.json();
       if (Array.isArray(data)) {
         setTasks(data);
@@ -48,7 +49,8 @@ export default function Home() {
 
   const fetchActivityLogs = async () => {
     try {
-      const response = await fetch('/api/activity-logs');
+      // Added { cache: 'no-store' } here as well
+      const response = await fetch('/api/activity-logs', { cache: 'no-store' });
       const data = await response.json();
       if (Array.isArray(data)) {
         setActivityLogs(data);
@@ -73,7 +75,6 @@ export default function Home() {
 
   return (
     <div className="h-screen bg-gray-50 flex flex-col overflow-hidden text-black">
-      {/* Updated Header with Log Out Button */}
       <div className="bg-gradient-to-r from-orange-400 to-orange-500 text-white px-6 py-4 shadow-md flex items-center justify-between">
         <h1 className="text-3xl font-bold">My Kanban Board</h1>
         <div className="flex items-center gap-4">

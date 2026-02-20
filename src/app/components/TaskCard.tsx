@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 
-// This tells the card what information it should expect to hold
 interface Task {
   _id: string;
   title: string;
@@ -13,7 +12,7 @@ interface Task {
 interface TaskCardProps {
   task: Task;
   status: string;
-  onTaskUpdated: () => void; // Walkie-talkie to refresh the board
+  onTaskUpdated: () => void;
 }
 
 export default function TaskCard({ task, status, onTaskUpdated }: TaskCardProps) {
@@ -21,7 +20,6 @@ export default function TaskCard({ task, status, onTaskUpdated }: TaskCardProps)
   const [title, setTitle] = useState(task.title);
   const [isDragging, setIsDragging] = useState(false);
 
-  // When you click save after editing a task
   const handleUpdate = async () => {
     try {
       const response = await fetch(`/api/tasks/${task._id}`, {
@@ -29,7 +27,6 @@ export default function TaskCard({ task, status, onTaskUpdated }: TaskCardProps)
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, status }),
       });
-
       if (response.ok) {
         setIsEditing(false);
         onTaskUpdated();
@@ -39,13 +36,11 @@ export default function TaskCard({ task, status, onTaskUpdated }: TaskCardProps)
     }
   };
 
-  // When you click the red delete button
   const handleDelete = async () => {
     try {
       const response = await fetch(`/api/tasks/${task._id}`, {
         method: 'DELETE',
       });
-
       if (response.ok) {
         onTaskUpdated();
       }
@@ -54,68 +49,53 @@ export default function TaskCard({ task, status, onTaskUpdated }: TaskCardProps)
     }
   };
 
-  // This magic makes the browser know we picked it up!
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    // Force the browser to grab exactly the card, ignoring column padding
+    e.dataTransfer.setDragImage(e.currentTarget, 0, 0);
     e.dataTransfer.setData('taskId', task._id);
-    setIsDragging(true);
+    
+    // Delay hiding the card so the browser can take a clear snapshot first
+    setTimeout(() => setIsDragging(true), 0);
   };
 
   const handleDragEnd = () => {
     setIsDragging(false);
   };
 
-  // If we clicked edit, show the input box instead of the normal text
   if (isEditing) {
     return (
-      <div className="bg-white rounded-lg p-3 shadow">
+      <div className="bg-white rounded-lg p-3 shadow border-l-4 border-blue-500">
         <input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full mb-2 px-2 py-1 border rounded text-sm text-black"
+          className="w-full mb-2 px-2 py-1 border rounded text-sm text-black focus:outline-none"
+          autoFocus
         />
         <div className="flex gap-2">
-          <button
-            onClick={handleUpdate}
-            className="flex-1 bg-blue-500 text-white px-2 py-1 rounded text-sm hover:bg-blue-600"
-          >
-            Save
-          </button>
-          <button
-            onClick={() => setIsEditing(false)}
-            className="flex-1 bg-gray-400 text-white px-2 py-1 rounded text-sm hover:bg-gray-500"
-          >
-            Cancel
-          </button>
+          <button onClick={handleUpdate} className="flex-1 bg-blue-500 text-white px-2 py-1 rounded text-sm font-medium">Save</button>
+          <button onClick={() => setIsEditing(false)} className="flex-1 bg-gray-400 text-white px-2 py-1 rounded text-sm font-medium">Cancel</button>
         </div>
       </div>
     );
   }
 
-  // The normal view of our sticky note
   return (
     <div
       draggable
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
-      className={`bg-white rounded p-2 shadow hover:shadow-md transition-all cursor-grab active:cursor-grabbing text-xs border border-gray-200 ${
-        isDragging ? 'opacity-50' : ''
+      data-task-id={task._id} 
+      className={`rounded p-3 text-xs border border-gray-200 border-l-4 border-l-blue-500 transition-all ${
+        isDragging 
+          ? 'fixed -left-full -top-full w-0 h-0 overflow-hidden opacity-0 is-dragging bg-transparent shadow-none pointer-events-none' 
+          : 'bg-white shadow hover:shadow-md cursor-grab active:cursor-grabbing'
       }`}
     >
-      <h3 className="font-semibold text-gray-800 text-sm break-words">{task.title}</h3>
-      <div className="flex gap-1 mt-2">
-        <button
-          onClick={() => setIsEditing(true)}
-          className="flex-1 bg-blue-500 text-white px-1.5 py-0.5 rounded text-xs hover:bg-blue-600"
-        >
-          Edit
-        </button>
-        <button
-          onClick={handleDelete}
-          className="flex-1 bg-red-500 text-white px-1.5 py-0.5 rounded text-xs hover:bg-red-600"
-        >
-          Delete
-        </button>
+      <h3 className="font-semibold text-gray-800 text-sm break-words mb-2">{task.title}</h3>
+      <div className="flex gap-2 mt-2">
+        <button onClick={() => setIsEditing(true)} className="flex-1 bg-blue-50 text-blue-600 border border-blue-200 px-1.5 py-1 rounded text-xs font-medium">Edit</button>
+        <button onClick={handleDelete} className="flex-1 bg-red-50 text-red-600 border border-red-200 px-1.5 py-1 rounded text-xs font-medium">Delete</button>
       </div>
     </div>
   );
