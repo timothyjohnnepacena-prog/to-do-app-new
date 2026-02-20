@@ -12,7 +12,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only fetch logs where the userId matches the logged-in user
     const logs = await ActivityLog.find({ userId: token.sub }).sort({ createdAt: -1 }).limit(50);
     return NextResponse.json(logs);
   } catch (error) {
@@ -26,15 +25,15 @@ export async function POST(req: NextRequest) {
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     
     if (!token || !token.sub) {
+      console.log("POST LOG REJECTED: Missing token.sub", token);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await req.json();
-    
-    // Attach the user's ID to the new log before saving
     const newLog = await ActivityLog.create({ ...body, userId: token.sub });
     return NextResponse.json(newLog, { status: 201 });
   } catch (error) {
+    console.error("POST LOG CRASH:", error);
     return NextResponse.json({ error: 'Failed to create log' }, { status: 500 });
   }
 }
@@ -48,10 +47,10 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only delete logs that belong to the logged-in user
     await ActivityLog.deleteMany({ userId: token.sub });
     return NextResponse.json({ message: 'Logs cleared successfully' });
   } catch (error) {
+    console.error("DELETE LOG CRASH:", error);
     return NextResponse.json({ error: 'Failed to clear logs' }, { status: 500 });
   }
 }

@@ -1,68 +1,51 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Task from '@/models/Task';
-import ActivityLog from '@/models/ActivityLog';
+import { getToken } from 'next-auth/jwt';
 
-// This handles "Updating" (editing or moving a task)
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     await dbConnect();
-    const { id } = await params;
-    const body = await request.json();
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     
-    const oldTask = await Task.findById(id);
-    if (!oldTask) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    if (!token || !token.sub) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const updatedTask = await Task.findByIdAndUpdate(id, body, { new: true });
+    const body = await req.json();
+    const updatedTask = await Task.findOneAndUpdate(
+      { _id: params.id, userId: token.sub },
+      body,
+      { new: true }
+    );
 
-    // If we moved the task to a new column, log it in history!
-    if (oldTask.status !== updatedTask.status) {
-      const statusNames: Record<string, string> = {
-        todo: 'To Do',
-        'in-progress': 'In Progress',
-        done: 'Done'
-      };
-      
-      await ActivityLog.create({
-        taskId: id,
-        action: 'status_changed',
-        details: `"${updatedTask.title}" moved from ${statusNames[oldTask.status]} to ${statusNames[updatedTask.status]}`,
-      });
+    if (!updatedTask) {
+      return NextResponse.json({ error: 'Not found or unauthorized' }, { status: 404 });
     }
-
     return NextResponse.json(updatedTask);
   } catch (error) {
+    console.error("PUT TASK CRASH:", error);
     return NextResponse.json({ error: 'Failed to update task' }, { status: 500 });
   }
 }
 
-// This handles "Deleting" a task
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     await dbConnect();
-    const { id } = await params;
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     
-    const deletedTask = await Task.findByIdAndDelete(id);
-    
-    // Log that we deleted it
-    if (deletedTask) {
-      await ActivityLog.create({
-        taskId: id,
-        action: 'deleted',
-        details: `Task deleted: ${deletedTask.title}`,
-      });
+    if (!token || !token.sub) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    return NextResponse.json({ message: 'Task deleted successfully' });
+    const deletedTask = await Task.findOneAndDelete({ _id: params.id, userId: token.sub });
+
+    if (!deletedTask) {
+      return NextResponse.json({ error: 'Not found or unauthorized' }, { status: 404 });
+    }
+    return NextResponse.json({ message: 'Deleted successfully' });
   } catch (error) {
+    console.error("DELETE TASK CRASH:", error);
     return NextResponse.json({ error: 'Failed to delete task' }, { status: 500 });
   }
 }
