@@ -23,7 +23,6 @@ export default function KanbanBoard({ tasks, onTaskAdded, onTaskUpdated }: Kanba
   const statuses = ['todo', 'in-progress', 'done'];
 
   const getTasksByStatus = (status: string) => {
-    // We added .toLowerCase() to both sides so it always finds a match!
     return tasks.filter((task) => task.status?.toLowerCase() === status.toLowerCase());
   };
 
@@ -38,7 +37,7 @@ export default function KanbanBoard({ tasks, onTaskAdded, onTaskUpdated }: Kanba
             status={status}
             tasks={getTasksByStatus(status)}
             onTaskUpdated={onTaskUpdated}
-            allTasks={tasks} // Used for drag and drop column swapping
+            allTasks={tasks}
           />
         ))}
       </div>

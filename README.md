@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kanban Board Application
+
+A full-stack task management application built with Next.js, featuring a drag-and-drop Kanban board with real-time activity tracking and user authentication.
+
+## Features
+
+- **Kanban Board**: Organize tasks across three columns (To Do, In Progress, Done)
+- **Drag & Drop**: Intuitive drag-and-drop interface for task reordering
+- **Authentication**: Secure login and registration system
+- **Activity Logs**: Track all task modifications with timestamps
+- **User Privacy**: Tasks and logs are private per user
+- **Responsive Design**: Mobile and desktop compatible
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+ and npm
+- MongoDB instance (local or cloud)
+
+### Installation
+
+1. Install dependencies:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Configure environment variables in `.env.local`:
+```
+MONGODB_URI=your_mongodb_connection_string
+NEXTAUTH_SECRET=your_secret_key_here
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Start the development server:
+```bash
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-## Learn More
+### Build for Production
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run build
+npm start
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Architecture
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Frontend**: Next.js with React and Tailwind CSS
+- **Backend**: Next.js API routes with NextAuth.js authentication
+- **Database**: MongoDB with Mongoose ODM
+- **Drag & Drop**: Native HTML5 drag-and-drop API
 
-## Deploy on Vercel
+## Project Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/
+├── app/
+│   ├── api/              # API routes (auth, tasks, activity logs)
+│   ├── components/       # React components (Kanban board, task card, etc.)
+│   ├── login/           # Login page
+│   ├── register/        # Registration page
+│   └── page.tsx         # Main dashboard
+├── lib/                 # Utilities (MongoDB connection)
+├── models/              # Mongoose schemas
+└── proxy.ts             # NextAuth middleware
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License
+
+Private project

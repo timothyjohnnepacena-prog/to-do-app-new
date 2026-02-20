@@ -39,7 +39,7 @@ export default function Column({ status, tasks, onTaskUpdated, allTasks }: Colum
     e.preventDefault();
     setIsDragOver(true);
 
-    // Find the element being dragged and get its task ID
+    // Retrieve the dragged task ID from the dragging element
     const draggingElement = document.querySelector('[data-task-id].is-dragging');
     if (draggingElement) {
       const taskId = draggingElement.getAttribute('data-task-id');
@@ -51,7 +51,7 @@ export default function Column({ status, tasks, onTaskUpdated, allTasks }: Colum
     const container = e.currentTarget;
     const y = e.clientY;
     
-    // We strictly ignore the card being dragged so it doesn't "block" itself
+    // Exclude the dragged element from drop position calculations
     const draggableElements = [...container.querySelectorAll('[data-task-id]:not(.is-dragging)')];
     
     let closestOffset = Number.NEGATIVE_INFINITY;

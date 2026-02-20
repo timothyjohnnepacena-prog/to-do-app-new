@@ -12,27 +12,24 @@ interface ActivityLogEntry {
 
 interface ActivityLogProps {
   logs: ActivityLogEntry[];
-  onLogsCleared?: () => void; // Walkie-talkie to tell the main screen we deleted the history
+  onLogsCleared?: () => void;
 }
 
 export default function ActivityLog({ logs, onLogsCleared }: ActivityLogProps) {
   const [displayLogs, setDisplayLogs] = useState<ActivityLogEntry[]>([]);
   const [isClearing, setIsClearing] = useState(false);
 
-  // Keep our visual logs up to date when the database gets new ones
   useEffect(() => {
     setDisplayLogs(logs);
   }, [logs]);
 
-  // Cute little emojis for our actions
   const actionLabels: Record<string, string> = {
-    created: '✨ Created',
-    status_changed: '🔄 Status Changed',
-    updated: '✏️ Updated',
-    deleted: '🗑️ Deleted',
+    created: 'Created',
+    status_changed: 'Status Changed',
+    updated: 'Updated',
+    deleted: 'Deleted',
   };
 
-  // What happens when we click the red Clear All button
   const handleClearAll = async () => {
     if (!window.confirm('Are you sure you want to delete all activity history?')) {
       return;
@@ -40,7 +37,6 @@ export default function ActivityLog({ logs, onLogsCleared }: ActivityLogProps) {
 
     setIsClearing(true);
     try {
-      // Send a message to our activity-logs mailbox to delete everything
       const response = await fetch('/api/activity-logs', {
         method: 'DELETE',
       });

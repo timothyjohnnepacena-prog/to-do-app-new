@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 
-// We force TypeScript to recognize this as a string
 const MONGODB_URI: string = process.env.MONGODB_URI as string;
 
 if (!MONGODB_URI) {
@@ -19,11 +18,12 @@ async function dbConnect() {
   }
 
   if (!cached.promise) {
+    // Reuse existing connection promise
     const opts = {
       bufferCommands: false,
     };
 
-    // By explicitly passing the typed string, the error is eliminated
+    // Establish connection with MongoDB
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
       return mongoose;
     });

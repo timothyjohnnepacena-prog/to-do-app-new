@@ -15,7 +15,7 @@ export async function PUT(req: NextRequest) {
 
     const { tasks, movedTaskId } = await req.json();
     
-    // 1. Update the priority (order) of every task in that column all at once!
+    // Update priority and status for all tasks in the reordered column
     const updates = tasks.map((t: any) => 
       Task.findOneAndUpdate(
         { _id: t._id, userId: token.sub },
@@ -24,7 +24,7 @@ export async function PUT(req: NextRequest) {
     );
     await Promise.all(updates);
 
-    // 2. Only log the specific task that the user actually dragged
+    // Log activity for the moved task
     if (movedTaskId) {
        const movedTask = tasks.find((t: any) => t._id === movedTaskId);
        if(movedTask) {
@@ -39,7 +39,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ message: 'Reordered successfully' });
   } catch (error) {
-    console.error("REORDER CRASH:", error);
+    console.error('Error reordering tasks:', error);
     return NextResponse.json({ error: 'Failed to reorder tasks' }, { status: 500 });
   }
 }

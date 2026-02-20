@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 
 interface TaskFormProps {
-  onTaskAdded: () => void; // A little walkie-talkie to tell the main screen we added a task
+  onTaskAdded: () => void;
 }
 
 export default function TaskForm({ onTaskAdded }: TaskFormProps) {
@@ -21,7 +21,6 @@ export default function TaskForm({ onTaskAdded }: TaskFormProps) {
     setIsSubmitting(true);
 
     try {
-      // Notice we are sending the message to our NEW mailbox: '/api/tasks'
       const response = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -33,7 +32,7 @@ export default function TaskForm({ onTaskAdded }: TaskFormProps) {
 
       if (response.ok) {
         setTitle('');
-        onTaskAdded(); // Use the walkie-talkie to tell the board to refresh!
+        onTaskAdded();
       }
     } catch (error) {
       console.error('Failed to create task:', error);

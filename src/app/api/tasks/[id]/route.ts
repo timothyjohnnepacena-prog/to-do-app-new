@@ -4,7 +4,7 @@ import Task from '@/models/Task';
 import ActivityLog from '@/models/ActivityLog';
 import { getToken } from 'next-auth/jwt';
 
-// NEXT.JS 16 FIX: Notice how `params` is now a Promise that we must await!
+// Note: params is a Promise in Next.js 16 and must be awaited
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await dbConnect();
@@ -14,7 +14,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // This is the magic fix! We have to "unpack" the promise to get the ID
+    // Resolve the params promise to extract the task ID
     const resolvedParams = await params;
     const taskId = resolvedParams.id;
 
@@ -29,7 +29,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Not found or unauthorized' }, { status: 404 });
     }
 
-    // Auto-Log the Edit or Move
+    // Log task modification
     await ActivityLog.create({
       taskId: updatedTask._id.toString(),
       action: 'Updated task',
@@ -39,7 +39,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     return NextResponse.json(updatedTask);
   } catch (error) {
-    console.error("PUT TASK CRASH:", error);
+    console.error('Error updating task:', error);
     return NextResponse.json({ error: 'Failed to update task' }, { status: 500 });
   }
 }
@@ -53,7 +53,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // The magic fix applied to the delete function as well
+    // Resolve the params promise to extract the task ID
     const resolvedParams = await params;
     const taskId = resolvedParams.id;
 
@@ -63,7 +63,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       return NextResponse.json({ error: 'Not found or unauthorized' }, { status: 404 });
     }
 
-    // Auto-Log the Deletion
+    // Log task deletion
     await ActivityLog.create({
       taskId: taskId,
       action: 'Deleted task',
@@ -73,7 +73,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
     return NextResponse.json({ message: 'Deleted successfully' });
   } catch (error) {
-    console.error("DELETE TASK CRASH:", error);
+    console.error('Error deleting task:', error);
     return NextResponse.json({ error: 'Failed to delete task' }, { status: 500 });
   }
 }

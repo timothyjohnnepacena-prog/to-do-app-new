@@ -25,7 +25,6 @@ export async function POST(req: NextRequest) {
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     
     if (!token || !token.sub) {
-      console.log("POST LOG REJECTED: Missing token.sub", token);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -33,7 +32,7 @@ export async function POST(req: NextRequest) {
     const newLog = await ActivityLog.create({ ...body, userId: token.sub });
     return NextResponse.json(newLog, { status: 201 });
   } catch (error) {
-    console.error("POST LOG CRASH:", error);
+    console.error('Error creating log:', error);
     return NextResponse.json({ error: 'Failed to create log' }, { status: 500 });
   }
 }
@@ -50,7 +49,7 @@ export async function DELETE(req: NextRequest) {
     await ActivityLog.deleteMany({ userId: token.sub });
     return NextResponse.json({ message: 'Logs cleared successfully' });
   } catch (error) {
-    console.error("DELETE LOG CRASH:", error);
+    console.error('Error clearing logs:', error);
     return NextResponse.json({ error: 'Failed to clear logs' }, { status: 500 });
   }
 }

@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // UPDATED: Now sorts by 'priority' first (0, 1, 2, 3), and then by date!
+    // Fetch tasks sorted by priority and creation date
     const tasks = await Task.find({ userId: token.sub }).sort({ priority: 1, createdAt: -1 });
     return NextResponse.json(tasks);
   } catch (error) {
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(newTask, { status: 201 });
   } catch (error) {
-    console.error("POST TASK CRASH:", error);
+    console.error('Error creating task:', error);
     return NextResponse.json({ error: 'Failed to create task' }, { status: 500 });
   }
 }

@@ -50,11 +50,8 @@ export default function TaskCard({ task, status, onTaskUpdated }: TaskCardProps)
   };
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
-    // Force the browser to grab exactly the card, ignoring column padding
     e.dataTransfer.setDragImage(e.currentTarget, 0, 0);
     e.dataTransfer.setData('taskId', task._id);
-    
-    // Delay hiding the card so the browser can take a clear snapshot first
     setTimeout(() => setIsDragging(true), 0);
   };
 

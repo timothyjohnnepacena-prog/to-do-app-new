@@ -25,7 +25,7 @@ const TaskSchema: Schema = new Schema(
   { timestamps: true }
 );
 
-// HARD RESET: This forces Next.js to destroy the old memory of this model and use the newest version!
+// Ensure fresh model instantiation in development
 if (mongoose.models.Task) {
   delete mongoose.models.Task;
 }
